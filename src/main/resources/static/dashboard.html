@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>User Dashboard</title>
+
+<style>
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: Arial;
+}
+
+body {
+	background: #f5f7ff;
+}
+
+.navbar {
+	background: #4f46e5;
+	color: white;
+	padding: 15px 40px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.navbar h2 {
+	font-size: 28px;
+}
+
+.logout-btn {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 5px;
+	background: white;
+	color: #4f46e5;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.container {
+	padding: 40px;
+}
+
+.welcome {
+	background: white;
+	padding: 30px;
+	border-radius: 12px;
+	margin-bottom: 30px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rooms {
+	display: flex;
+	gap: 20px;
+	flex-wrap: wrap;
+	margin-top: 20px;
+}
+
+.card {
+	width: 300px;
+	background: white;
+	border-radius: 15px;
+	overflow: hidden;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+	width: 100%;
+	height: 200px;
+	object-fit: cover;
+}
+
+.card-content {
+	padding: 15px;
+}
+
+.book-btn {
+	background: #4f46e5;
+	color: white;
+	border: none;
+	padding: 10px 15px;
+	border-radius: 8px;
+	cursor: pointer;
+	margin-top: 10px;
+	width: 100%;
+}
+
+.book-btn:hover {
+	background: #3730a3;
+}
+</style>
+
+</head>
+
+<body>
+
+	<div class="navbar">
+
+		<h2>StayEase</h2>
+
+		<div>
+
+			<button class="logout-btn"
+				onclick="window.location.href='my-bookings.html'">My
+				Bookings</button>
+				
+			<button class="logout-btn"
+    		onclick="window.location.href='profile.html'">
+    		Profile
+			</button>
+
+			<button class="logout-btn" onclick="logout()">Logout</button>
+
+		</div>
+
+	</div>
+
+	<div class="container">
+
+		<div class="welcome">
+
+			<h1>
+				Welcome, <span id="username"></span>
+			</h1>
+
+			<p>Smart PG & Hostel Management Dashboard</p>
+
+		</div>
+
+		<h2 style="margin-bottom: 20px;">Rooms</h2>
+
+		<div class="rooms" id="roomsContainer"></div>
+
+	</div>
+
+	<script>
+
+	const token = localStorage.getItem("token");
+
+	const user =
+	    JSON.parse(localStorage.getItem("user"));
+
+	if(!token || !user){
+
+	    window.location.href = "login.html";
+	}
+
+if(user){
+
+    document.getElementById("username").innerText =
+        user.name;
+
+} else {
+
+    window.location.href = "login.html";
+}
+
+function logout(){
+
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+
+    window.location.href = "login.html";
+}
+
+async function loadRooms() {
+
+	const response =
+	    await fetch(
+	        "http://localhost:8081/rooms/all",
+	        {
+	            headers:{
+	                "Authorization":
+	                    "Bearer " + token
+	            }
+	        }
+	    );
+
+    const rooms =
+        await response.json();
+
+    const container =
+        document.getElementById("roomsContainer");
+
+    container.innerHTML = "";
+
+    rooms.forEach(room => {
+
+        container.innerHTML += `
+
+            <div class="card">
+
+                <img src="${room.imageUrl}">
+
+                <div class="card-content">
+
+                    <h3>${room.roomType}</h3>
+
+                    <p>&#8377; ${room.price}/month</p>
+
+                    <p>Select your booking dates</p>
+
+                    <div style="margin-top:10px;">
+
+                        <label>Check-In Date</label>
+
+                        <input type="date"
+                            id="checkin-${room.roomId}"
+                            style="
+                                width:100%;
+                                padding:8px;
+                                margin-top:5px;
+                                margin-bottom:10px;
+                                border-radius:5px;
+                                border:1px solid #ccc;
+                            ">
+
+                        <label>Check-Out Date</label>
+
+                        <input type="date"
+                            id="checkout-${room.roomId}"
+                            style="
+                                width:100%;
+                                padding:8px;
+                                margin-top:5px;
+                                margin-bottom:10px;
+                                border-radius:5px;
+                                border:1px solid #ccc;
+                            ">
+
+                        <button class="book-btn"
+                            onclick="bookRoom(${room.roomId})">
+
+                            Book Now
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+    });
+}
+
+loadRooms();
+
+async function bookRoom(roomId){
+
+    const user =
+        JSON.parse(localStorage.getItem("user"));
+
+    const checkInDate =
+        document.getElementById(
+            `checkin-${roomId}`
+        ).value;
+
+    const checkOutDate =
+        document.getElementById(
+            `checkout-${roomId}`
+        ).value;
+
+    if(!checkInDate || !checkOutDate){
+
+        alert("Please select both dates");
+
+        return;
+    }
+
+    const today =
+        new Date()
+        .toISOString()
+        .split("T")[0];
+
+    if(checkInDate < today){
+
+        alert(
+            "Check-In Date cannot be in the past"
+        );
+
+        return;
+    }
+
+    if(checkOutDate <= checkInDate){
+
+        alert(
+            "Check-Out Date must be after Check-In Date"
+        );
+
+        return;
+    }
+
+    const booking = {
+
+    	    userId: user.id,
+
+    	    roomId: roomId,
+
+    	    checkInDate: checkInDate,
+
+    	    checkOutDate: checkOutDate
+    	};
+
+    const response = await fetch(
+        "http://localhost:8081/bookings/add",
+        {
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + token
+            },
+
+            body:JSON.stringify(booking)
+        }
+    );
+
+    if(response.ok){
+
+        alert("Room Booked Successfully");
+
+        loadRooms();
+
+    }
+    else{
+
+        const errorMessage =
+            await response.text();
+
+        alert(errorMessage);
+    }
+
+}
+</script>
+
+</body>
+
+</html>

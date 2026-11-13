@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Admin Dashboard</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial;
+}
+
+body{
+    background:#f5f7ff;
+}
+
+.navbar{
+    background:#dc2626;
+    color:white;
+    padding:15px 40px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.navbar h2{
+    font-size:28px;
+}
+
+.logout-btn{
+    padding:10px 20px;
+    border:none;
+    border-radius:5px;
+    background:white;
+    color:#dc2626;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.container{
+    padding:40px;
+}
+
+.welcome{
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    margin-bottom:30px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.top-actions{
+    margin-bottom:20px;
+}
+
+.add-btn{
+    background:green;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.rooms{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.card{
+    width:300px;
+    background:white;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+.card img{
+    width:100%;
+    height:200px;
+    object-fit:cover;
+}
+
+.card-content{
+    padding:15px;
+}
+
+.update-btn{
+    background:orange;
+    color:white;
+    border:none;
+    padding:10px;
+    width:100%;
+    border-radius:8px;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+.delete-btn{
+    background:red;
+    color:white;
+    border:none;
+    padding:10px;
+    width:100%;
+    border-radius:8px;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+.stats{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:30px;
+}
+
+.stat-card{
+    flex:1;
+    min-width:200px;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.stat-card h3{
+    color:#666;
+    margin-bottom:10px;
+}
+
+.stat-card h1{
+    color:#dc2626;
+    font-size:35px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+    <h2>Admin Dashboard</h2>
+
+    <div>
+
+        <button class="logout-btn"
+            onclick="window.location.href='admin-bookings.html'">
+
+            View Bookings
+        </button>
+
+        <button class="logout-btn"
+            onclick="logout()">
+
+            Logout
+        </button>
+
+    </div>
+
+</div>
+
+<div class="container">
+
+    <div class="welcome">
+
+        <h1>
+            Admin Dashboard
+        </h1>
+
+        <p>
+            Manage Rooms & Bookings
+        </p>
+
+    </div>
+    
+    <div class="stats">
+
+    <div class="stat-card">
+        <h3>Total Users</h3>
+        <h1 id="totalUsers">0</h1>
+    </div>
+
+    <div class="stat-card">
+        <h3>Total Rooms</h3>
+        <h1 id="totalRooms">0</h1>
+    </div>
+
+    <!-- <div class="stat-card">
+        <h3>Available Rooms</h3>
+        <h1 id="availableRooms">0</h1>
+    </div>
+
+    <div class="stat-card">
+        <h3>Booked Rooms</h3>
+        <h1 id="bookedRooms">0</h1>
+    </div> -->
+
+    <div class="stat-card">
+        <h3>Total Bookings</h3>
+        <h1 id="totalBookings">0</h1>
+    </div>
+
+</div>
+
+    <div class="top-actions">
+
+        <button class="add-btn"
+                onclick="window.location.href='add-room.html'">
+
+            Add Room
+
+        </button>
+
+    </div>
+
+    <div class="rooms" id="roomsContainer">
+
+    </div>
+
+</div>
+
+<script>
+
+function logout(){
+
+    localStorage.removeItem("user");
+
+    window.location.href = "login.html";
+}
+
+async function loadRooms() {
+
+	const token =
+	    localStorage.getItem("token");
+
+	const response =
+	    await fetch(
+	        "http://localhost:8081/rooms/all",
+	        {
+	            headers:{
+	                "Authorization":
+	                    "Bearer " + token
+	            }
+	        }
+	    );
+
+    const rooms = await response.json();
+
+    const container =
+        document.getElementById("roomsContainer");
+
+    container.innerHTML = "";
+
+    rooms.forEach(room => {
+
+        container.innerHTML += `
+
+            <div class="card">
+
+                <img src="${room.imageUrl}">
+
+                <div class="card-content">
+
+                    <h3>${room.roomType}</h3>
+
+                    <p>&#8377; ${room.price}/month</p>
+
+                    <p>${room.availability}</p>
+
+                    <button class="update-btn"
+                            onclick="updateRoom(
+                                ${room.roomId},
+                                '${room.roomType}',
+                                ${room.price},
+                                '${room.availability}',
+                                '${room.imageUrl}'
+                            )">
+
+                        Update
+
+                    </button>
+
+                    <button class="delete-btn"
+                            onclick="deleteRoom(${room.roomId})">
+
+                        Delete
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+    });
+}
+
+async function loadStats(){
+
+	const token =
+        localStorage.getItem("token");
+
+    const response =
+        await fetch(
+            "http://localhost:8081/admin/stats",
+            {
+                headers:{
+                    "Authorization":
+                        "Bearer " + token
+                }
+            }
+        );
+
+    const stats =
+        await response.json();
+
+    document.getElementById(
+        "totalUsers"
+    ).innerText =
+        stats.totalUsers;
+
+    document.getElementById(
+        "totalRooms"
+    ).innerText =
+        stats.totalRooms;
+
+    /* document.getElementById(
+        "availableRooms"
+    ).innerText =
+        stats.availableRooms;
+
+    document.getElementById(
+        "bookedRooms"
+    ).innerText =
+        stats.bookedRooms; */
+
+    document.getElementById(
+        "totalBookings"
+    ).innerText =
+        stats.totalBookings;
+}
+
+async function deleteRoom(id){
+
+	const token =
+	    localStorage.getItem("token");
+
+	await fetch(
+	    `http://localhost:8081/rooms/delete/${id}`,
+	    {
+	        method:"DELETE",
+
+	        headers:{
+	            "Authorization":
+	                "Bearer " + token
+	        }
+	    }
+	);
+
+    loadRooms();
+}
+
+async function updateRoom(
+    id,
+    oldType,
+    oldPrice,
+    oldAvailability,
+    oldImage
+){
+
+    const roomType =
+        prompt("Enter Room Type", oldType);
+
+    const price =
+        prompt("Enter Price", oldPrice);
+
+    const availability =
+        prompt("Enter Availability", oldAvailability);
+
+    const imageUrl =
+        prompt("Enter Image URL", oldImage);
+
+    const updatedRoom = {
+
+        roomType: roomType,
+        price: price,
+        availability: availability,
+        imageUrl: imageUrl
+    };
+
+    const token =
+        localStorage.getItem("token");
+
+    await fetch(
+        `http://localhost:8081/rooms/update/${id}`,
+        {
+            method:"PUT",
+
+            headers:{
+                "Content-Type":"application/json",
+
+                "Authorization":
+                    "Bearer " + token
+            },
+
+            body:JSON.stringify(updatedRoom)
+        }
+    );
+
+    loadRooms();
+}
+
+loadStats();
+loadRooms();
+
+</script>
+
+</body>
+
+</html>

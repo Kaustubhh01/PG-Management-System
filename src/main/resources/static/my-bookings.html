@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>My Bookings</title>
+
+<style>
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: Arial;
+}
+
+body {
+	background: #f5f7ff;
+}
+
+.navbar {
+	background: #4f46e5;
+	color: white;
+	padding: 15px 40px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.logout-btn {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 5px;
+	background: white;
+	color: #4f46e5;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.container {
+	padding: 40px;
+}
+
+.booking-card{
+    background:white;
+    border-radius:18px;
+    margin-bottom:25px;
+    overflow:hidden;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    transition:0.3s;
+}
+
+.booking-card:hover{
+    transform:translateY(-5px);
+}
+
+.booking-top{
+    background:linear-gradient(135deg,#4f46e5,#6366f1);
+    color:white;
+    padding:20px;
+}
+
+.booking-body{
+    padding:20px;
+}
+
+.booking-room{
+    font-size:24px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.booking-date{
+    margin-top:10px;
+    background:#f5f7ff;
+    padding:12px;
+    border-radius:10px;
+}
+
+.label{
+    font-weight:bold;
+    color:#4f46e5;
+}
+
+.cancel-btn{
+    margin-top:20px;
+    padding:12px 20px;
+    border:none;
+    border-radius:10px;
+    background:#ef4444;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+.cancel-btn:hover{
+    background:#dc2626;
+}
+
+</style>
+
+</head>
+
+<body>
+
+	<div class="navbar">
+
+		<h2>My Bookings</h2>
+
+		<div>
+
+			<button class="logout-btn"
+				onclick="window.location.href='dashboard.html'">Dashboard</button>
+
+			<button class="logout-btn" onclick="logout()">Logout</button>
+
+		</div>
+
+	</div>
+
+	<div class="container">
+
+		<div id="bookingsContainer"></div>
+
+	</div>
+
+	<script>
+
+	const token = localStorage.getItem("token");
+
+	const user =
+	    JSON.parse(localStorage.getItem("user"));
+
+	if(!token || !user){
+
+	    window.location.href = "login.html";
+	}
+
+	function logout(){
+
+	    localStorage.removeItem("user");
+	    localStorage.removeItem("token");
+
+	    window.location.href = "login.html";
+	}
+
+async function loadBookings(){
+
+	const response =
+	    await fetch(
+	        `http://localhost:8081/bookings/user/${user.id}`,
+	        {
+	            headers:{
+	                "Authorization":"Bearer " + token
+	            }
+	        }
+	    );
+
+	const bookings = await response.json();
+    
+    const roomResponse =
+        await fetch(
+            "http://localhost:8081/rooms/all",
+            {
+                headers:{
+                    "Authorization":"Bearer " + token
+                }
+            }
+        );
+
+    const rooms =
+        await roomResponse.json();
+
+    const container =
+        document.getElementById(
+            "bookingsContainer"
+        );
+
+    container.innerHTML = "";
+
+    if(bookings.length === 0){
+
+        container.innerHTML =
+            "<h2>No Bookings Found</h2>";
+
+        return;
+    }
+      
+
+    bookings.forEach(booking => {
+
+    	const room =
+            rooms.find(r =>
+                r.roomId === booking.roomId
+            );
+    	
+    	container.innerHTML += `
+
+    		<div class="booking-card">
+
+    		    <div class="booking-top">
+
+    		        <h2>
+    		            Booking ID : ${booking.bookingId}
+    		        </h2>
+
+    		    </div>
+
+    		    <div class="booking-body">
+
+    		        <div class="booking-room">
+
+    		            ${room ? room.roomType : "Unknown Room"}
+
+    		        </div>
+
+    		        <div class="booking-date">
+
+    		            <p>
+    		                <span class="label">
+    		                    Check-In:
+    		                </span>
+
+    		                ${booking.checkInDate}
+    		            </p>
+
+    		            <br>
+
+    		            <p>
+    		                <span class="label">
+    		                    Check-Out:
+    		                </span>
+
+    		                ${booking.checkOutDate}
+    		            </p>
+
+    		        </div>
+
+    		        <button class="cancel-btn"
+    		            onclick="cancelBooking(${booking.bookingId})">
+
+    		            Cancel Booking
+
+    		        </button>
+
+    		    </div>
+
+    		</div>
+
+    		`;
+    });
+}
+
+async function cancelBooking(bookingId){
+
+	const response = await fetch(
+
+		    `http://localhost:8081/bookings/delete/${bookingId}`,
+
+		    {
+		        method:"DELETE",
+
+		        headers:{
+		            "Authorization":"Bearer " + token
+		        }
+		    }
+		);
+
+    if(response.ok){
+
+        alert("Booking Cancelled");
+
+        loadBookings();
+    }
+}
+
+loadBookings();
+
+</script>
+
+</body>
+
+</html>
